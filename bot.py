@@ -7,14 +7,17 @@ from telegram.ext import (
     ContextTypes,
 )
 
+# Leggo le variabili d'ambiente
 TOKEN = os.getenv("BOT_TOKEN")
 WEBHOOK_URL = os.getenv("WEBHOOK_URL")
 
 print("TOKEN LETTO:", repr(TOKEN))
 print("WEBHOOK_URL LETTO:", repr(WEBHOOK_URL))
 
+# Chat dove inviare il backlog
 CHAT_ID = "-1003789925325"
 
+# Testo del backlog
 BACKLOG = """Backlog NOC Fastweb By Mecca  
 
 Dato di aggiornamento ultimo ticket: 30/03/2026 20:46:43
@@ -100,29 +103,37 @@ Ticket aperti oggi: 314
 Ticket chiusi oggi: 295
 """
 
+# Comando /backlog
 async def backlog(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(BACKLOG)
 
+# Job giornaliero
 async def send_daily_report(context: ContextTypes.DEFAULT_TYPE):
     await context.bot.send_message(chat_id=CHAT_ID, text=BACKLOG)
 
+# Main
 async def main():
     app = ApplicationBuilder().token(TOKEN).build()
 
+    # Comandi
     app.add_handler(CommandHandler("backlog", backlog))
 
+    # Job giornaliero alle 8:00
     app.job_queue.run_daily(
         send_daily_report,
         time=datetime.time(hour=8, minute=0),
         name="daily_report"
     )
 
+    # Avvio bot
     await app.initialize()
     await app.start()
 
+    # Imposto il webhook
     await app.bot.set_webhook(WEBHOOK_URL)
     print("Webhook impostato su:", WEBHOOK_URL)
 
+    # Avvio server webhook
     await app.updater.start_webhook(
         listen="0.0.0.0",
         port=int(os.getenv("PORT", 8080)),
