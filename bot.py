@@ -17,7 +17,7 @@ print("WEBHOOK_URL LETTO:", repr(WEBHOOK_URL))
 # Chat dove inviare il backlog
 CHAT_ID = "-1003789925325"
 
-# Testo del backlog (stringa sicura)
+# Testo del backlog
 BACKLOG = (
     "Backlog NOC Fastweb By Mecca\n\n"
     "Dato di aggiornamento ultimo ticket: 30/03/2026 20:46:43\n"
@@ -94,13 +94,14 @@ BACKLOG = (
 
 # Comando /backlog
 async def backlog(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    print("Comando /backlog ricevuto da:", update.effective_chat.id)
     await update.message.reply_text(BACKLOG)
 
 # Job giornaliero
 async def send_daily_report(context: ContextTypes.DEFAULT_TYPE):
     await context.bot.send_message(chat_id=CHAT_ID, text=BACKLOG)
 
-# Main
+# MAIN con webhook corretto
 async def main():
     app = ApplicationBuilder().token(TOKEN).build()
 
@@ -114,24 +115,18 @@ async def main():
         name="daily_report"
     )
 
-    # Avvio bot
-    await app.initialize()
-    await app.start()
-
-    # Imposto il webhook con url_path = TOKEN
+    # Imposto il webhook
     webhook_full_url = f"{WEBHOOK_URL}/{TOKEN}"
     await app.bot.set_webhook(webhook_full_url)
     print("Webhook impostato su:", webhook_full_url)
 
-    # Avvio server webhook
-    await app.updater.start_webhook(
+    # Avvio server webhook (senza polling)
+    await app.run_webhook(
         listen="0.0.0.0",
         port=int(os.getenv("PORT", 8080)),
         url_path=TOKEN,
         webhook_url=webhook_full_url,
     )
-
-    await app.updater.idle()
 
 if __name__ == "__main__":
     import asyncio
