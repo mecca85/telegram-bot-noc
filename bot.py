@@ -1,13 +1,20 @@
 import os
-from telegram import Update
-from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes
 import datetime
+from telegram import Update
+from telegram.ext import (
+    ApplicationBuilder,
+    CommandHandler,
+    ContextTypes,
+)
 
 TOKEN = os.getenv("BOT_TOKEN")
 print("TOKEN LETTO:", repr(TOKEN))
 
 # Chat ID del gruppo
 CHAT_ID = "-1003789925325"
+
+# URL pubblico generato da Railway
+WEBHOOK_URL = os.getenv("WEBHOOK_URL")
 
 BACKLOG = """Backlog NOC Fastweb By Mecca  
 
@@ -100,20 +107,34 @@ async def backlog(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def send_daily_report(context: ContextTypes.DEFAULT_TYPE):
     await context.bot.send_message(chat_id=CHAT_ID, text=BACKLOG)
 
-def main():
+async def start_webhook():
     app = ApplicationBuilder().token(TOKEN).build()
 
     # Comando manuale
     app.add_handler(CommandHandler("backlog", backlog))
 
-    # JOB QUEUE CORRETTO
+    # Job giornaliero
     app.job_queue.run_daily(
         send_daily_report,
         time=datetime.time(hour=8, minute=0),
         name="daily_report"
     )
 
-    app.run_polling()
+    # Avvio webhook
+    await app.initialize()
+    await app.start()
+    await app.bot.set_webhook(url=WEBHOOK_URL)
+    print("Webhook impostato su:", WEBHOOK_URL)
+
+    await app.updater.start_webhook(
+        listen="0.0.0.0",
+        port=int(os.getenv("PORT", 8080)),
+        url_path="",
+        webhook_url=WEBHOOK_URL,
+    )
+
+    await app.updater.idle()
 
 if __name__ == "__main__":
-    main()
+    import asyncio
+    asyncio.run(start_webhook())
