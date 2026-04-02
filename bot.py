@@ -5,6 +5,7 @@ import datetime
 
 # Il token ora arriva da Render (variabile d'ambiente)
 TOKEN = os.getenv("BOT_TOKEN")
+print("TOKEN LETTO:", repr(TOKEN))
 
 # Chat ID del gruppo
 CHAT_ID = "-1003789925325"
