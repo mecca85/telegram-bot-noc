@@ -130,9 +130,9 @@ async def main():
     await app.start()
 
     # Imposto il webhook
-    await app.bot.set_webhook(WEBHOOK_URL)
+    
     print("Webhook impostato su:", WEBHOOK_URL)
-
+    await app.bot.set_webhook(WEBHOOK_URL + "/")
     # Avvio server webhook
     await app.updater.start_webhook(
         listen="0.0.0.0",
