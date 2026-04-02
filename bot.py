@@ -3,7 +3,6 @@ from telegram import Update
 from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes
 import datetime
 
-# Il token ora arriva da Render (variabile d'ambiente)
 TOKEN = os.getenv("BOT_TOKEN")
 print("TOKEN LETTO:", repr(TOKEN))
 
@@ -104,11 +103,11 @@ async def send_daily_report(context: ContextTypes.DEFAULT_TYPE):
 def main():
     app = ApplicationBuilder().token(TOKEN).build()
 
+    # Comando manuale
     app.add_handler(CommandHandler("backlog", backlog))
 
-    job_queue = app.job_queue
-
-    job_queue.run_daily(
+    # JOB QUEUE CORRETTO
+    app.job_queue.run_daily(
         send_daily_report,
         time=datetime.time(hour=8, minute=0),
         name="daily_report"
