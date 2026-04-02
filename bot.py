@@ -2,7 +2,7 @@ import os
 import datetime
 from telegram import Update
 from telegram.ext import (
-    ApplicationBuilder,
+    Application,
     CommandHandler,
     ContextTypes,
 )
@@ -101,27 +101,25 @@ async def backlog(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def send_daily_report(context: ContextTypes.DEFAULT_TYPE):
     await context.bot.send_message(chat_id=CHAT_ID, text=BACKLOG)
 
-# MAIN con webhook corretto
-async def main():
-    app = ApplicationBuilder().token(TOKEN).build()
+# MAIN
+def main():
+    app = Application.builder().token(TOKEN).build()
 
     # Comandi
     app.add_handler(CommandHandler("backlog", backlog))
 
-    # Job giornaliero alle 8:00
+    # Job giornaliero
     app.job_queue.run_daily(
         send_daily_report,
         time=datetime.time(hour=8, minute=0),
         name="daily_report"
     )
 
-    # Imposto il webhook
+    # Webhook
     webhook_full_url = f"{WEBHOOK_URL}/{TOKEN}"
-    await app.bot.set_webhook(webhook_full_url)
     print("Webhook impostato su:", webhook_full_url)
 
-    # Avvio server webhook (senza polling)
-    await app.run_webhook(
+    app.run_webhook(
         listen="0.0.0.0",
         port=int(os.getenv("PORT", 8080)),
         url_path=TOKEN,
@@ -129,5 +127,4 @@ async def main():
     )
 
 if __name__ == "__main__":
-    import asyncio
-    asyncio.run(main())
+    main()
