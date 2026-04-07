@@ -6,7 +6,9 @@ from telegram import Update
 from telegram.ext import (
     ApplicationBuilder,
     CommandHandler,
+    MessageHandler,
     ContextTypes,
+    filters
 )
 
 # ---------------------------------------------------------
@@ -174,6 +176,19 @@ async def send_interval_report(context: ContextTypes.DEFAULT_TYPE):
         logger.error(f"Errore invio report periodico: {e}")
 
 # ---------------------------------------------------------
+# HANDLER MESSAGGI NORMALI
+# ---------------------------------------------------------
+async def echo(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    text = update.message.text.lower()
+
+    if "ciao" in text:
+        await update.message.reply_text("Ciao! Come posso aiutarti?")
+    elif "buongiorno" in text:
+        await update.message.reply_text("Buongiorno! Tutto bene?")
+    else:
+        await update.message.reply_text("Ho ricevuto il tuo messaggio.")
+
+# ---------------------------------------------------------
 # AVVIO BOT (NO ASYNCIO.RUN!)
 # ---------------------------------------------------------
 if __name__ == "__main__":
@@ -195,6 +210,9 @@ if __name__ == "__main__":
     app.add_handler(CommandHandler("setinterval", setinterval))
     app.add_handler(CommandHandler("status", status))
     app.add_handler(CommandHandler("test", test))
+
+    # HANDLER MESSAGGI NORMALI
+    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, echo))
 
     # JOB GIORNALIERO
     app.job_queue.run_daily(
@@ -220,3 +238,4 @@ if __name__ == "__main__":
         url_path=TOKEN,
         webhook_url=full_webhook_url,
     )
+
