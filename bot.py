@@ -1,5 +1,6 @@
 import os
 import logging
+from datetime import time
 from telegram import Update
 from telegram.ext import (
     ApplicationBuilder,
@@ -52,7 +53,6 @@ async def send_daily_report(context: ContextTypes.DEFAULT_TYPE):
     except Exception as e:
         logger.error(f"Errore inviando il backlog a {CHAT_ID}: {e}")
 
-        # Gestione specifica
         if "Forbidden" in str(e):
             logger.error("Il bot è stato rimosso dalla chat.")
         if "Chat not found" in str(e):
@@ -81,7 +81,11 @@ async def main():
     app.add_handler(CommandHandler("backlog", backlog))
 
     # JOB GIORNALIERO (esempio: ogni giorno alle 09:00)
-    app.job_queue.run_daily(send_daily_report, time=9*3600)
+    app.job_queue.run_daily(
+        send_daily_report,
+        time=time(hour=9, minute=0),
+        name="daily_report"
+    )
 
     # WEBHOOK
     webhook_path = f"/{TOKEN}"
