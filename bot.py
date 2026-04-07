@@ -11,6 +11,14 @@ from telegram.ext import (
     filters
 )
 
+from reports_manager import (
+    log_message,
+    generate_daily_report,
+    generate_periodic_report,
+    generate_weekly_report,
+    generate_monthly_report
+)
+
 # ---------------------------------------------------------
 # LOGGING
 # ---------------------------------------------------------
@@ -31,15 +39,14 @@ TOKEN = os.getenv("BOT_TOKEN")
 WEBHOOK_URL = os.getenv("WEBHOOK_URL")
 CONFIG_FILE = "config.json"
 
-# ---------------------------------------------------------
-# STORAGE JSON
-# ---------------------------------------------------------
+
 def load_config():
     try:
         with open(CONFIG_FILE, "r") as f:
             return json.load(f)
     except:
         return {"chat_id": None, "interval_minutes": 60}
+
 
 def backup_config():
     try:
@@ -49,10 +56,12 @@ def backup_config():
     except Exception as e:
         logger.error(f"Errore backup config: {e}")
 
+
 def save_config(data):
     backup_config()
     with open(CONFIG_FILE, "w") as f:
         json.dump(data, f, indent=4)
+
 
 config = load_config()
 
@@ -69,14 +78,21 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "/status → mostra configurazione\n"
         "/test → invia messaggio di test\n"
         "/debug → mostra l'update ricevuto\n"
+        "/report_daily → report giornaliero\n"
+        "/report_periodic → report periodico\n"
+        "/report_weekly → report settimanale\n"
+        "/report_monthly → report mensile\n"
     )
+
 
 async def id_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     chat_id = update.effective_chat.id
     await update.message.reply_text(f"Chat ID: {chat_id}")
 
+
 async def backlog(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("Backlog generato correttamente.")
+
 
 async def setchat(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if len(context.args) != 1:
@@ -88,6 +104,7 @@ async def setchat(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     await update.message.reply_text(f"Chat ID aggiornato a: {new_id}")
     logger.info(f"CHAT_ID aggiornato a {new_id}")
+
 
 async def setinterval(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if len(context.args) != 1:
@@ -104,6 +121,7 @@ async def setinterval(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(f"Intervallo aggiornato a {minutes} minuti.")
     logger.info(f"INTERVALLO aggiornato a {minutes} minuti")
 
+
 async def status(update: Update, context: ContextTypes.DEFAULT_TYPE):
     chat_id = config.get("chat_id")
     interval = config.get("interval_minutes")
@@ -119,6 +137,7 @@ async def status(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     await update.message.reply_markdown(msg)
 
+
 async def test(update: Update, context: ContextTypes.DEFAULT_TYPE):
     chat_id = config.get("chat_id")
     if not chat_id:
@@ -130,6 +149,7 @@ async def test(update: Update, context: ContextTypes.DEFAULT_TYPE):
     except Exception as e:
         await update.message.reply_text(f"Errore: {e}")
 
+
 async def debug(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
         raw = update.to_dict()
@@ -139,43 +159,80 @@ async def debug(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text(f"Errore debug: {e}")
 
 # ---------------------------------------------------------
+# REPORT COMMAND HANDLERS
+# ---------------------------------------------------------
+async def report_daily_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text(generate_daily_report())
+
+
+async def report_periodic_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text(generate_periodic_report())
+
+
+async def report_weekly_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text(generate_weekly_report())
+
+
+async def report_monthly_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text(generate_monthly_report())
+
+# ---------------------------------------------------------
 # JOBS
 # ---------------------------------------------------------
-async def send_daily_report(context: ContextTypes.DEFAULT_TYPE):
-    chat_id = config.get("chat_id")
-    if not chat_id:
-        return logger.warning("Nessun chat_id configurato.")
-
-    BACKLOG = "Questo è il report giornaliero."
-
-    try:
-        await context.bot.send_message(chat_id=chat_id, text=BACKLOG)
-        logger.info(f"Backlog inviato a {chat_id}")
-    except Exception as e:
-        logger.error(f"Errore inviando il backlog a {chat_id}: {e}")
-
-async def send_interval_report(context: ContextTypes.DEFAULT_TYPE):
+async def send_daily_report_job(context: ContextTypes.DEFAULT_TYPE):
     chat_id = config.get("chat_id")
     if not chat_id:
         return
-
-    BACKLOG = "Report periodico."
-
     try:
-        await context.bot.send_message(chat_id=chat_id, text=BACKLOG)
+        await context.bot.send_message(chat_id=chat_id, text=generate_daily_report())
+        logger.info(f"Report giornaliero inviato a {chat_id}")
+    except Exception as e:
+        logger.error(f"Errore invio report giornaliero: {e}")
+
+
+async def send_interval_report_job(context: ContextTypes.DEFAULT_TYPE):
+    chat_id = config.get("chat_id")
+    if not chat_id:
+        return
+    try:
+        await context.bot.send_message(chat_id=chat_id, text=generate_periodic_report())
         logger.info(f"Report periodico inviato a {chat_id}")
     except Exception as e:
         logger.error(f"Errore invio report periodico: {e}")
+
+
+async def send_weekly_report_job(context: ContextTypes.DEFAULT_TYPE):
+    chat_id = config.get("chat_id")
+    if not chat_id:
+        return
+    try:
+        await context.bot.send_message(chat_id=chat_id, text=generate_weekly_report())
+        logger.info(f"Report settimanale inviato a {chat_id}")
+    except Exception as e:
+        logger.error(f"Errore invio report settimanale: {e}")
+
+
+async def send_monthly_report_job(context: ContextTypes.DEFAULT_TYPE):
+    chat_id = config.get("chat_id")
+    if not chat_id:
+        return
+    try:
+        await context.bot.send_message(chat_id=chat_id, text=generate_monthly_report())
+        logger.info(f"Report mensile inviato a {chat_id}")
+    except Exception as e:
+        logger.error(f"Errore invio report mensile: {e}")
 
 # ---------------------------------------------------------
 # HANDLER MESSAGGI
 # ---------------------------------------------------------
 async def echo(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    text = update.message.text.lower()
+    text = update.message.text
+    log_message(text)
 
-    if "ciao" in text:
+    low = text.lower()
+    if "ciao" in low:
         await update.message.reply_text("Ciao! Come posso aiutarti?")
-    elif "buongiorno" in text:
+    elif "buongiorno" in low:
         await update.message.reply_text("Buongiorno! Tutto bene?")
     else:
         await update.message.reply_text("Ho ricevuto il tuo messaggio.")
@@ -194,7 +251,7 @@ if __name__ == "__main__":
 
     app = ApplicationBuilder().token(TOKEN).build()
 
-    # HANDLER COMANDI
+    # COMANDI
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("id", id_cmd))
     app.add_handler(CommandHandler("backlog", backlog))
@@ -204,25 +261,43 @@ if __name__ == "__main__":
     app.add_handler(CommandHandler("test", test))
     app.add_handler(CommandHandler("debug", debug))
 
-    # HANDLER MESSAGGI NORMALI
+    app.add_handler(CommandHandler("report_daily", report_daily_cmd))
+    app.add_handler(CommandHandler("report_periodic", report_periodic_cmd))
+    app.add_handler(CommandHandler("report_weekly", report_weekly_cmd))
+    app.add_handler(CommandHandler("report_monthly", report_monthly_cmd))
+
+    # MESSAGGI
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, echo))
 
-    # JOB GIORNALIERO
+    # JOBS
     app.job_queue.run_daily(
-        send_daily_report,
+        send_daily_report_job,
         time=time(hour=9, minute=0),
         name="daily_report"
     )
 
-    # JOB OGNI X MINUTI
     app.job_queue.run_repeating(
-        send_interval_report,
+        send_interval_report_job,
         interval=config["interval_minutes"] * 60,
         first=10,
         name="interval_report"
     )
 
-    # WEBHOOK — PORTA 8880 (QUELLA DI RAILWAY)
+    app.job_queue.run_daily(
+        send_weekly_report_job,
+        time=time(hour=9, minute=0),
+        days=(0,),  # lunedì
+        name="weekly_report"
+    )
+
+    app.job_queue.run_monthly(
+        send_monthly_report_job,
+        when=time(hour=9, minute=0),
+        day=1,
+        name="monthly_report"
+    )
+
+    # WEBHOOK — PORTA 8880 (quella esposta da Railway)
     full_webhook_url = f"{WEBHOOK_URL}/{TOKEN}"
 
     app.run_webhook(
