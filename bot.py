@@ -30,7 +30,7 @@ WEBHOOK_URL = os.getenv("WEBHOOK_URL")
 CONFIG_FILE = "config.json"
 
 # ---------------------------------------------------------
-# FUNZIONI DI STORAGE
+# STORAGE JSON
 # ---------------------------------------------------------
 def load_config():
     try:
@@ -39,7 +39,16 @@ def load_config():
     except:
         return {"chat_id": None, "interval_minutes": 60}
 
+def backup_config():
+    try:
+        import shutil
+        shutil.copy(CONFIG_FILE, CONFIG_FILE + ".bak")
+        logger.info("Backup config.json.bak creato")
+    except Exception as e:
+        logger.error(f"Errore backup config: {e}")
+
 def save_config(data):
+    backup_config()
     with open(CONFIG_FILE, "w") as f:
         json.dump(data, f, indent=4)
 
@@ -54,7 +63,9 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "Comandi disponibili:\n"
         "/id → mostra chat_id\n"
         "/setchat <id> → imposta chat_id\n"
-        "/setinterval <minuti> → imposta intervallo invio backlog\n"
+        "/setinterval <minuti> → imposta intervallo report\n"
+        "/status → mostra configurazione\n"
+        "/test → invia messaggio di test\n"
     )
 
 async def id_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -97,7 +108,39 @@ async def setinterval(update: Update, context: ContextTypes.DEFAULT_TYPE):
     logger.info(f"INTERVALLO aggiornato a {minutes} minuti")
 
 # ---------------------------------------------------------
-# JOB: INVIO REPORT
+# COMANDO: STATUS
+# ---------------------------------------------------------
+async def status(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    chat_id = config.get("chat_id")
+    interval = config.get("interval_minutes")
+
+    msg = (
+        "📊 *Stato del bot*\n\n"
+        f"• Chat configurata: `{chat_id}`\n"
+        f"• Intervallo report: `{interval}` minuti\n"
+        f"• Webhook: `{WEBHOOK_URL}`\n"
+        "• Job giornaliero: 09:00\n"
+        "• Job periodico: attivo\n"
+    )
+
+    await update.message.reply_markdown(msg)
+
+# ---------------------------------------------------------
+# COMANDO: TEST
+# ---------------------------------------------------------
+async def test(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    chat_id = config.get("chat_id")
+    if not chat_id:
+        return await update.message.reply_text("Nessun chat_id configurato. Usa /setchat")
+
+    try:
+        await context.bot.send_message(chat_id=chat_id, text="Messaggio di test inviato correttamente.")
+        await update.message.reply_text("Test inviato.")
+    except Exception as e:
+        await update.message.reply_text(f"Errore: {e}")
+
+# ---------------------------------------------------------
+# JOB: INVIO REPORT GIORNALIERO
 # ---------------------------------------------------------
 async def send_daily_report(context: ContextTypes.DEFAULT_TYPE):
     chat_id = config.get("chat_id")
@@ -150,6 +193,8 @@ async def main():
     app.add_handler(CommandHandler("backlog", backlog))
     app.add_handler(CommandHandler("setchat", setchat))
     app.add_handler(CommandHandler("setinterval", setinterval))
+    app.add_handler(CommandHandler("status", status))
+    app.add_handler(CommandHandler("test", test))
 
     # JOB GIORNALIERO
     app.job_queue.run_daily(
