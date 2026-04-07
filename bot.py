@@ -174,9 +174,9 @@ async def send_interval_report(context: ContextTypes.DEFAULT_TYPE):
         logger.error(f"Errore invio report periodico: {e}")
 
 # ---------------------------------------------------------
-# MAIN
+# AVVIO BOT (NO ASYNCIO.RUN!)
 # ---------------------------------------------------------
-async def main():
+if __name__ == "__main__":
     logger.info("Starting Container")
 
     if not TOKEN:
@@ -213,18 +213,11 @@ async def main():
 
     # WEBHOOK
     full_webhook_url = f"{WEBHOOK_URL}/{TOKEN}"
-    await app.bot.set_webhook(url=full_webhook_url)
+    app.bot.set_webhook(url=full_webhook_url)
 
-    await app.run_webhook(
+    app.run_webhook(
         listen="0.0.0.0",
         port=int(os.getenv("PORT", 8080)),
         url_path=TOKEN,
         webhook_url=full_webhook_url,
     )
-
-# ---------------------------------------------------------
-# AVVIO
-# ---------------------------------------------------------
-if __name__ == "__main__":
-    import asyncio
-    asyncio.run(main())
