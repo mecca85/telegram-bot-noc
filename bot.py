@@ -68,6 +68,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "/setinterval <minuti> → imposta intervallo report\n"
         "/status → mostra configurazione\n"
         "/test → invia messaggio di test\n"
+        "/debug → mostra l'update ricevuto\n"
     )
 
 async def id_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -142,6 +143,17 @@ async def test(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text(f"Errore: {e}")
 
 # ---------------------------------------------------------
+# COMANDO: DEBUG
+# ---------------------------------------------------------
+async def debug(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    try:
+        raw = update.to_dict()
+        text = json.dumps(raw, indent=2, ensure_ascii=False)
+        await update.message.reply_text(f"DEBUG:\n\n{text[:3500]}")
+    except Exception as e:
+        await update.message.reply_text(f"Errore debug: {e}")
+
+# ---------------------------------------------------------
 # JOB: INVIO REPORT GIORNALIERO
 # ---------------------------------------------------------
 async def send_daily_report(context: ContextTypes.DEFAULT_TYPE):
@@ -189,7 +201,7 @@ async def echo(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("Ho ricevuto il tuo messaggio.")
 
 # ---------------------------------------------------------
-# AVVIO BOT (NO ASYNCIO.RUN!)
+# AVVIO BOT
 # ---------------------------------------------------------
 if __name__ == "__main__":
     logger.info("Starting Container")
@@ -210,6 +222,7 @@ if __name__ == "__main__":
     app.add_handler(CommandHandler("setinterval", setinterval))
     app.add_handler(CommandHandler("status", status))
     app.add_handler(CommandHandler("test", test))
+    app.add_handler(CommandHandler("debug", debug))
 
     # HANDLER MESSAGGI NORMALI
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, echo))
@@ -229,7 +242,7 @@ if __name__ == "__main__":
         name="interval_report"
     )
 
-    # WEBHOOK (gestito automaticamente da PTB)
+    # WEBHOOK
     full_webhook_url = f"{WEBHOOK_URL}/{TOKEN}"
 
     app.run_webhook(
@@ -238,4 +251,3 @@ if __name__ == "__main__":
         url_path=TOKEN,
         webhook_url=full_webhook_url,
     )
-
