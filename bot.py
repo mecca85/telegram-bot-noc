@@ -211,9 +211,8 @@ if __name__ == "__main__":
         name="interval_report"
     )
 
-    # WEBHOOK
+    # WEBHOOK (PTB LO GESTISCE AUTOMATICAMENTE)
     full_webhook_url = f"{WEBHOOK_URL}/{TOKEN}"
-    app.bot.set_webhook(url=full_webhook_url)
 
     app.run_webhook(
         listen="0.0.0.0",
