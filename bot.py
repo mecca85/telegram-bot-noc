@@ -242,7 +242,7 @@ if __name__ == "__main__":
         name="interval_report"
     )
 
-    # WEBHOOK
+    # WEBHOOK — CORRETTO PER I GRUPPI
     full_webhook_url = f"{WEBHOOK_URL}/{TOKEN}"
 
     app.run_webhook(
@@ -250,4 +250,5 @@ if __name__ == "__main__":
         port=int(os.getenv("PORT", 8080)),
         url_path=TOKEN,
         webhook_url=full_webhook_url,
+        allowed_updates=["message", "chat_member"]
     )
