@@ -12,7 +12,7 @@ from telegram.ext import (
 )
 
 # ---------------------------------------------------------
-# LOGGING AVANZATO
+# LOGGING
 # ---------------------------------------------------------
 logging.basicConfig(
     level=logging.INFO,
@@ -78,9 +78,6 @@ async def id_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def backlog(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("Backlog generato correttamente.")
 
-# ---------------------------------------------------------
-# COMANDO: SETCHAT
-# ---------------------------------------------------------
 async def setchat(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if len(context.args) != 1:
         return await update.message.reply_text("Uso corretto: /setchat <chat_id>")
@@ -92,9 +89,6 @@ async def setchat(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(f"Chat ID aggiornato a: {new_id}")
     logger.info(f"CHAT_ID aggiornato a {new_id}")
 
-# ---------------------------------------------------------
-# COMANDO: SETINTERVAL
-# ---------------------------------------------------------
 async def setinterval(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if len(context.args) != 1:
         return await update.message.reply_text("Uso: /setinterval <minuti>")
@@ -110,9 +104,6 @@ async def setinterval(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(f"Intervallo aggiornato a {minutes} minuti.")
     logger.info(f"INTERVALLO aggiornato a {minutes} minuti")
 
-# ---------------------------------------------------------
-# COMANDO: STATUS
-# ---------------------------------------------------------
 async def status(update: Update, context: ContextTypes.DEFAULT_TYPE):
     chat_id = config.get("chat_id")
     interval = config.get("interval_minutes")
@@ -128,9 +119,6 @@ async def status(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     await update.message.reply_markdown(msg)
 
-# ---------------------------------------------------------
-# COMANDO: TEST
-# ---------------------------------------------------------
 async def test(update: Update, context: ContextTypes.DEFAULT_TYPE):
     chat_id = config.get("chat_id")
     if not chat_id:
@@ -142,9 +130,6 @@ async def test(update: Update, context: ContextTypes.DEFAULT_TYPE):
     except Exception as e:
         await update.message.reply_text(f"Errore: {e}")
 
-# ---------------------------------------------------------
-# COMANDO: DEBUG
-# ---------------------------------------------------------
 async def debug(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
         raw = update.to_dict()
@@ -154,7 +139,7 @@ async def debug(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text(f"Errore debug: {e}")
 
 # ---------------------------------------------------------
-# JOB: INVIO REPORT GIORNALIERO
+# JOBS
 # ---------------------------------------------------------
 async def send_daily_report(context: ContextTypes.DEFAULT_TYPE):
     chat_id = config.get("chat_id")
@@ -166,13 +151,9 @@ async def send_daily_report(context: ContextTypes.DEFAULT_TYPE):
     try:
         await context.bot.send_message(chat_id=chat_id, text=BACKLOG)
         logger.info(f"Backlog inviato a {chat_id}")
-
     except Exception as e:
         logger.error(f"Errore inviando il backlog a {chat_id}: {e}")
 
-# ---------------------------------------------------------
-# JOB: INVIO OGNI X MINUTI
-# ---------------------------------------------------------
 async def send_interval_report(context: ContextTypes.DEFAULT_TYPE):
     chat_id = config.get("chat_id")
     if not chat_id:
@@ -183,12 +164,11 @@ async def send_interval_report(context: ContextTypes.DEFAULT_TYPE):
     try:
         await context.bot.send_message(chat_id=chat_id, text=BACKLOG)
         logger.info(f"Report periodico inviato a {chat_id}")
-
     except Exception as e:
         logger.error(f"Errore invio report periodico: {e}")
 
 # ---------------------------------------------------------
-# HANDLER MESSAGGI NORMALI
+# HANDLER MESSAGGI
 # ---------------------------------------------------------
 async def echo(update: Update, context: ContextTypes.DEFAULT_TYPE):
     text = update.message.text.lower()
@@ -242,12 +222,12 @@ if __name__ == "__main__":
         name="interval_report"
     )
 
-    # WEBHOOK — CORRETTO PER I GRUPPI
+    # WEBHOOK — PORTA 8880 (QUELLA DI RAILWAY)
     full_webhook_url = f"{WEBHOOK_URL}/{TOKEN}"
 
     app.run_webhook(
         listen="0.0.0.0",
-        port=int(os.getenv("PORT", 8080)),
+        port=int(os.getenv("PORT", 8880)),
         url_path=TOKEN,
         webhook_url=full_webhook_url,
         allowed_updates=["message", "chat_member", "my_chat_member"]
