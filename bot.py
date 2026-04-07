@@ -250,5 +250,5 @@ if __name__ == "__main__":
         port=int(os.getenv("PORT", 8080)),
         url_path=TOKEN,
         webhook_url=full_webhook_url,
-        allowed_updates=["message", "chat_member"]
+        allowed_updates=["message", "chat_member", "my_chat_member"]
     )
